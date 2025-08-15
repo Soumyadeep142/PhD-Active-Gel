@@ -1,0 +1,17 @@
+set terminal pngcairo size 1200,900 enhanced font 'Arial,14'
+set output 'Heat_Map_Cell.png'
+
+set xlabel "X index"
+set ylabel "Y index"
+set zlabel "Z index"
+set view 60, 45
+set size ratio -1
+
+set palette defined (0 "red", 1 "blue")
+set cbrange [0:1]
+
+set colorbox
+
+
+splot 'Heat_Map_Cell.dat' using 1:2:3:($4 != 0 ? $4 : NaN) notitle with points palette pt 7 ps 2
+
