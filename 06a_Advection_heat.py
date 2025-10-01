@@ -15,7 +15,7 @@ phi_max = float("-inf")
 
 for f in files:
     data = np.loadtxt(f)
-    x, y, z, grad_phi, phi = data[:,0], data[:,1], data[:,2], data[:,4], data[:,5]
+    x, y, z, phi, grad_phi, = data[:,0], data[:,1], data[:,2], data[:,3], data[:,4]
     mask = np.abs(phi) > 0.7
     if np.any(mask):
         x, y, z, grad_phi, phi = x[mask], y[mask], z[mask], grad_phi[mask], phi[mask]
@@ -28,7 +28,7 @@ for f in files:
 frames = []
 for f in files:
     data = np.loadtxt(f)
-    x, y, z, phi = data[:,0], data[:,1], data[:,2], data[:,5]
+    x, y, z, phi = data[:,0], data[:,1], data[:,2], data[:,3]
     mask = np.abs(phi) > 0.7
     x, y, z, phi = x[mask], y[mask], z[mask], phi[mask]
     

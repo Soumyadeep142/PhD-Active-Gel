@@ -1,3 +1,5 @@
+c This code does advection only
+
       implicit double precision(a-h, o-z)
       include 'fftw3.f'
 
@@ -64,20 +66,16 @@ c      write(*,*)norm
 c     Creating initial condition-arrays
       allocate(u(Nx, Ny, Nz))
       allocate(uc(Nx,Ny,Nz))
-      allocate(p(Nx, Ny, Nz))
       allocate(iku(Nx,Ny,Nz))
       allocate(ikux(Nx,Ny,Nz))
       allocate(ikuy(Nx,Ny,Nz))
       allocate(ikuz(Nx,Ny,Nz))
-      allocate(pc(Nx, Ny, Nz))
       allocate(ikuc(Nx,Ny,Nz))
       allocate(ikuhx(NxC,Ny,Nz))
       allocate(ikuhy(NxC,Ny,Nz))
       allocate(ikuhz(NxC,Ny,Nz))
 
       u=0.d0
-      p=0.d0
-      pc=0.d0
       iku=0.d0
       ikuc=0.d0
       
@@ -100,7 +98,7 @@ c Initial phi field
 c    FFTW Plans      
       allocate(uh(NxC, Ny, Nz))
       allocate(uhc(NxC, Ny, Nz))
-      allocate(ph(NxC, Ny, Nz))
+
 
       call fft_forward(Nx, Ny, Nz, u, uh)
 
@@ -134,17 +132,16 @@ c    FFTW initial condition
 c Initial psi field
       open(8, file='step_0.dat')
       c=1
-      p=iku**2*c
       do 41 i=1,Nx
         do 52 j=1, Ny
          do 61 k=1,Nz
-          write(8,*)i, j, k, c, p(i,j,k), u(i,j,k), iku(i,j,k)      
+          write(8,*)i, j, k, c, u(i,j,k), iku(i,j,k)      
  61     continue
  52    continue
  41   continue
       close(8)
       
-      call fft_forward(Nx, Ny, Nz, p, ph)  
+
       
 c   Velocity 
       allocate(v(3))
@@ -166,7 +163,6 @@ c    FFTW initial condition
       
          kv=kx(i)*v(1)+ky(j)*v(2)+kz(k)*v(3)
          uh(i,j,k)=uh(i,j,k)*(1.d0-iota*kv*dt)
-         ph(i,j,k)=ph(i,j,k)*(1.d0-iota*kv*dt)
          ikuhx(i,j,k)=iota*kx(i)*uh(i,j,k)
          ikuhy(i,j,k)=iota*ky(j)*uh(i,j,k)
          ikuhz(i,j,k)=iota*kz(k)*uh(i,j,k)
@@ -179,8 +175,6 @@ c    FFTW initial condition
 c   Saving files
 
       if (mod(it,snap_int).eq.0) then      
-       call fft_backward(Nx, Ny, Nz, ph, p)
-       p=p*norm
       
        call fft_backward(Nx, Ny, Nz, ikuhx, ikux)     
        call fft_backward(Nx, Ny, Nz, ikuhy, ikuy)
@@ -201,14 +195,13 @@ c   Saving files
         do 2 j=1, Ny
          do 31 k=1,Nz
           d=abs(iku(i,j,k))
-          c=p(i,j,k)/((d*d))        
-          write(8,*)i, j, k, c, p(i,j,k), u(i,j,k), iku(i,j,k)
+          write(8,*)i, j, k, u(i,j,k), iku(i,j,k)
  31      continue
  2      continue
  1     continue
        close(8)
        
-       call fft_forward(Nx, Ny, Nz, p, ph)     
+
        call fft_forward(Nx, Ny, Nz, u, uh)
       endif
       

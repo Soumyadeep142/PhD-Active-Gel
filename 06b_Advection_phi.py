@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 data = np.loadtxt("step_0.dat")  # or any step
 
 # Extract columns
-x, y, z, c, pc, phi = data[:,0], data[:,1], data[:,2], data[:,3], data[:,4], data[:,5]
+x, y, z, phi = data[:,0], data[:,1], data[:,2], data[:,4]
 
 # Pick slice y=0, z=0
 mask = (y == 9) & (z == 9)  # assuming y=0, z=0 are min values
