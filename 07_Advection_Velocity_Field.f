@@ -1,11 +1,11 @@
-c This code does advection only
+c This code does advection as a field only
 
       implicit double precision(a-h, o-z)
       include 'fftw3.f'
 
       integer Nx, Ny, Nz, NT, snap_int
       double precision pi, dt,Lx, Ly, Lz, dx, dy, dz, k2, norm, kv
-      double precision bx,by,bz, c_x, c_y,c_z, eps, c, r
+      double precision bx,by,bz, c_x, c_y,c_z, eps, c, r, N1, N2, N3
       parameter(Nx=16, Ny=16, Nz=16, NT=5000, snap_int=100)
       parameter(pi=acos(-1.d0), dt=0.0001d0)
       parameter(alpha=0.1d0, r0=4)
@@ -13,10 +13,12 @@ c This code does advection only
       double precision, allocatable :: kx(:), ky(:), kz(:)
       double precision, allocatable :: u(:,:,:)
       double precision, allocatable :: ikuc(:,:,:)
-      double precision, allocatable :: uc(:,:,:), v(:), iku(:,:,:)
+      double precision, allocatable :: uc(:,:,:), iku(:,:,:)
+      double precision, allocatable :: vx(:,:,:), vy(:,:,:), vz(:,:,:)
+      complex*16, allocatable :: vxc(:,:,:), vyc(:,:,:), vzc(:,:,:)
       double precision, allocatable :: ikux(:,:,:), ikuy(:,:,:)
-      double precision, allocatable :: ikuz(:,:,:)
-      complex*16, allocatable :: uh(:,:,:), uhc(:,:,:), ikuhx(:,:,:)
+      double precision, allocatable :: ikuz(:,:,:), N(:,:,:)
+      complex*16, allocatable :: uh(:,:,:), vuh(:,:,:), ikuhx(:,:,:)
       complex*16, allocatable :: ph(:,:,:), ikuhy(:,:,:), ikuhz(:,:,:)
       integer*8 :: plan
       integer :: NxC, it, isnap, l
@@ -74,12 +76,21 @@ c     Creating initial condition-arrays
       allocate(ikuhx(NxC,Ny,Nz))
       allocate(ikuhy(NxC,Ny,Nz))
       allocate(ikuhz(NxC,Ny,Nz))
+      allocate(vx(Nx, Ny, Nz))
+      allocate(vy(Nx, Ny, Nz))
+      allocate(vz(Nx, Ny, Nz))
+      allocate(vxc(NxC,Ny,Nz))
+      allocate(vyc(NxC,Ny,Nz))
+      allocate(vzc(NxC,Ny,Nz))
+      allocate(uh(NxC, Ny, Nz))
+      allocate(vuh(NxC, Ny, Nz))
+      allocate(N(Nx,Ny,Nz))
 
       u=0.d0
       iku=0.d0
       ikuc=0.d0
       
-
+C***************Initiation of fields*************************
 c Initial phi field
       c_x=(Nx*1.d0+1)/2
       c_y=(Ny*1.d0+1)/2
@@ -96,8 +107,7 @@ c Initial phi field
             
 
 c    FFTW Plans      
-      allocate(uh(NxC, Ny, Nz))
-      allocate(uhc(NxC, Ny, Nz))
+      
 
 
       call fft_forward(Nx, Ny, Nz, u, uh)
@@ -118,24 +128,14 @@ c    FFTW initial condition
  118     continue
  117    continue
  42    continue
-      
-       call fft_backward(Nx, Ny, Nz, ikuhx, ikux)     
-       call fft_backward(Nx, Ny, Nz, ikuhy, ikuy)
-       call fft_backward(Nx, Ny, Nz, ikuhz, ikuz)
-       
-       ikux=ikux*norm
-       ikuy=ikuy*norm
-       ikuz=ikuz*norm
-       
-       iku=dsqrt(ikux**2+ikuy**2+ikuz**2)
-       
+            
 c Initial psi field
       open(8, file='step_0.dat')
       c=1
       do 41 i=1,Nx
         do 52 j=1, Ny
          do 61 k=1,Nz
-          write(8,*)i, j, k, u(i,j,k), iku(i,j,k)      
+          write(8,*)i, j, k, c, u(i,j,k)     
  61     continue
  52    continue
  41   continue
@@ -143,48 +143,70 @@ c Initial psi field
       
 
       
-c   Velocity 
-      allocate(v(3))
-      v(1)=10
-      v(2)=0
-      v(3)=0
+c   Initiation of Velocity Field
+      do 9 i=1,Nx
+       do 10 j=1,Ny
+        do 16 k=1,Nz
+           vx(i,j,k)=10
+           vy(i,j,k)=0
+           vz(i,j,k)=0
+ 16     continue
+ 10    continue
+ 9    continue
+
+
       
-      eps=0.d0
-c   Time Marching
-      open(8,file='adv_c', status='replace')   
+c**************************************************************
+
+
+c*****************Time Marching********************************
+
       do 3 it=1, NT
       
-
-c    FFTW initial condition      
-
+      
+      
       do 4 i=1,NxC
        do 17 j=1,Ny
         do 18 k=1,Nz
-      
-         kv=kx(i)*v(1)+ky(j)*v(2)+kz(k)*v(3)
-         uh(i,j,k)=uh(i,j,k)*(1.d0-iota*kv*dt)
          ikuhx(i,j,k)=iota*kx(i)*uh(i,j,k)
          ikuhy(i,j,k)=iota*ky(j)*uh(i,j,k)
-         ikuhz(i,j,k)=iota*kz(k)*uh(i,j,k)
-
+         ikuhz(i,j,k)=iota*kz(k)*uh(i,j,k)     
  18     continue
  17    continue
  4    continue
-
+ 
+      call fft_backward(Nx, Ny, Nz, ikuhx, ikux)     
+      call fft_backward(Nx, Ny, Nz, ikuhy, ikuy)
+      call fft_backward(Nx, Ny, Nz, ikuhz, ikuz)
+      
+      ikux=ikux*norm
+      ikuy=ikuy*norm
+      ikuz=ikuz*norm
+      
+      do 19 i=1,Nx
+      	do 20 j=1,Ny
+      	  do 22 k=1,Nz
+      	    N1=vx(i,j,k)*ikux(i,j,k)
+      	    N2=vy(i,j,k)*ikuy(i,j,k)
+      	    N3=vz(i,j,k)*ikuz(i,j,k)
+      	    N(i,j,k)=N1+N2+N3
+ 22       continue
+ 20     continue
+ 19   continue
+ 
+      call fft_forward(Nx, Ny, Nz, N, vuh)
+      
+      do 5 i=1,NxC
+      	do 6 j=1,Ny
+      	 do 7 k=1,Nz
+      	   uh(i,j,k)=uh(i,j,k)-vuh(i,j,k)*dt
+ 7       continue
+ 6      continue
+ 5    continue
 
 c   Saving files
 
       if (mod(it,snap_int).eq.0) then      
-      
-       call fft_backward(Nx, Ny, Nz, ikuhx, ikux)     
-       call fft_backward(Nx, Ny, Nz, ikuhy, ikuy)
-       call fft_backward(Nx, Ny, Nz, ikuhz, ikuz)
-       
-       ikux=ikux*norm
-       ikuy=ikuy*norm
-       ikuz=ikuz*norm
-       
-       iku=dsqrt(ikux**2+ikuy**2+ikuz**2)
        
        call fft_backward(Nx, Ny, Nz, uh, u)
        u=u*norm
@@ -195,7 +217,7 @@ c   Saving files
         do 2 j=1, Ny
          do 31 k=1,Nz
           d=abs(iku(i,j,k))
-          write(8,*)i, j, k, u(i,j,k), iku(i,j,k)
+          write(8,*)i, j, k, u(i,j,k)
  31      continue
  2      continue
  1     continue
@@ -207,6 +229,7 @@ c   Saving files
       
       
  3    continue
+c *******************************************************
       call dfftw_cleanup()
       stop
       end

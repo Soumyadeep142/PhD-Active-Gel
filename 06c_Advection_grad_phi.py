@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load data: columns = x y z col4(col=grad_phi) col5 col6(phi)
-data = np.loadtxt("step_0.dat")
-x_all, y_all, z_all, grad_phi_all = data[:,0], data[:,1], data[:,2], data[:,5]
+data = np.loadtxt("step_2000.dat")
+x_all, y_all, z_all, grad_phi_all = data[:,0], data[:,1], data[:,2], data[:,4]
 
 # Select points along y=0, z=0
 mask = (y_all == 9) & (z_all == 9)
