@@ -181,6 +181,9 @@ c            endif
  15     continue
  14    continue
  13   continue
+ 
+ 
+ 
 c*************************Initial Run************************************************
 
        do 65 it=1, 10000
@@ -456,112 +459,6 @@ c*****************************************************************
 
 
 
-
-c*******************real space********************************
-c      subroutine compute_curvature_real(Nx,Ny,Nz,uh,dx,dy,dz,
-c     1     ux,uy,uz,iku,Curve)
-
-
-c      implicit double precision(a-h,o-z)
-
-c      integer Nx,Ny,Nz
-c      parameter(grad_tol=0.1, grad_tol2=0.2)
-      
-c      double precision dx,dy,dz, norm
-c      double precision ux(Nx,Ny,Nz), uy(Nx,Ny,Nz), uz(Nx,Ny,Nz)
-c      double precision Curve(Nx,Ny,Nz), u(Nx, Ny, Nz)
-      
-c      complex*16 uh(Nx/2+1, Ny, Nz)
-
-c      double precision :: iku(Nx,Ny,Nz)     
-c      double precision n_x(Nx,Ny,Nz),n_y(Nx,Ny,Nz),n_z(Nx,Ny,Nz),mag
-c      double precision dn_x_dx,dn_y_dy,dn_z_dz
-
-c      integer i,j,k
-       
-
-c      norm=1.d0/(Nx*Ny*Nz)
-
-
-       
-c      do 138  i = 1, Nx
-c        do 139 j = 1, Ny
-c            do 140 k = 1, Nz
-            
-c		mag=sqrt(iku(i,j,k))
-c                if (mag.gt.grad_tol) then
-c
-c                    n_x(i,j,k) = ux(i,j,k) / mag
-c                    n_y(i,j,k) = uy(i,j,k) / mag
-c                    n_z(i,j,k) = uz(i,j,k) / mag
-c                else
-
-c                    n_x(i,j,k) = 1.0d0
-c                    n_y(i,j,k) = 0.d0
-c                    n_z(i,j,k) = 0.d0
-c               endif
-c 140         continue
-c 139     continue
-c 138    continue
- 
-c       call fft_backward(Nx, Ny, Nz, uh, u)  
-c       u=u*norm
-
-c       open(300,file="normals.dat")
-c        do i=1,Nx
-c         do j=1,Ny
-c           do k=1,Nz
-c            write(300,*) i,j,k,u(i,j,k), n_x(i,j,k), n_y(i,j,k), 
-c     1      n_z(i,j,k)
-c           end do
-c         end do
-c       end do
-c      close(300)
-c       call fft_forward(Nx, Ny, Nz, u, uh)  
-       
-       
-c       do 38 i=2, Nx-1
-c       do 39 j=2, Ny-1
-c       do 40 k=2, Nz-1   
-c       if ((sqrt(iku(i,j,k)).gt.grad_tol2).and.
-c     1    (sqrt(iku(i+1,j,k)).gt.grad_tol2).and.
-c     1    (sqrt(iku(i,j+1,k)).gt.grad_tol2).and.
-c     1    (sqrt(iku(i,j,k+1)).gt.grad_tol2)) then
-     
-
-      
-c           dn_x_dx=-(n_x(i+1,j,k)-n_x(i,j,k))/dx
-c           dn_y_dy=-(n_y(i,j+1,k)-n_y(i,j,k))/dy
-c           dn_z_dz=-(n_z(i,j,k+1)-n_z(i,j,k))/dz
-         
-c           Curve(i,j,k)=dn_x_dx+dn_y_dy+dn_z_dz
-c           write(*,*)i,j,k, Curve(i,j,k)
-c        else
-c           Curve(i,j,k)=0.d0
-c        endif
-c 40     continue
-c 39     continue
-c 38     continue
-
-
-c       end subroutine compute_curvature_real
-c********************************************************
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 c*****************************Fourier Space********************************************
       subroutine compute_curvature(Nx, Ny, Nz, NxC, uh, kx,ky,kz,tol,
      1 norm, ux, uy, uz, iku, Curve)
@@ -591,7 +488,7 @@ c*****************************Fourier Space*************************************
       integer :: i, j, k
       complex*16, parameter :: iota = (0.d0, 1.d0)
 c************************************************************
-c      write(*,*) sqrt(iku(10,17,17))
+
       do 38  i = 1, Nx
         do 39 j = 1, Ny
             do 40 k = 1, Nz
@@ -644,36 +541,12 @@ c      call fft_forward(Nx, Ny, Nz, u, uh)
  43     continue
  42   continue
  
-     
-c      write(*,*) ikauh(9,17,17)
 
 
       call fft_backward(Nx, Ny, Nz, ikauh, Curve)
-      
-      
-      
-c       do 138  i = 1, Nx
-c        do 139 j = 1, Ny
-c            do 140 k = 1, Nz
-
-c                if (sqrt(iku(i,j,k)).lt.tol) then
-c                 if (abs(u(i,j,k)).gt.0.5d0) then
-c                   Curve(i,j,k)=0.d0
-c                endif
-                    
-c 140         continue
-c 139     continue
-c 138    continue
-        
-        
-
-c      write(*,*) Curve(17,17,17)
 
       Curve=-1.d0*Curve*norm
-c      write(*,*) sum(Curve)*norm
 
-      
-c      write(*,*) Curve(17,17,17)
 
       end subroutine compute_curvature
 c**********************************************************************
