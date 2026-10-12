@@ -1,0 +1,8 @@
+set term qt
+
+j0=32
+k0=32
+
+plot "step_10000.dat" u ( ($2==j0 && $3==k0) ? $1 : 1/0 ) : 6  w lp pt 7 lc rgb "blue" t "curvature", "step_10000.dat" u ( ($2==j0 && $3==k0) ? $1 : 1/0 ) : 4  w lp pt 9 lc rgb "red" t "phi"
+
+pause -1
